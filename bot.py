@@ -8,10 +8,22 @@ from telegram.ext import (
     ContextTypes,
 )
 
+# ১. এনভায়রনমেন্ট ভ্যারিয়েবল অথবা নতুন টোকেন থেকে পড়বে
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
+# ২. যদি এনভায়রনমেন্টে না থাকে, তবে server.txt ফাইল চেক করবে
+if not BOT_TOKEN and os.path.exists("server.txt"):
+    try:
+        with open("server.txt", "r") as f:
+            for line in f:
+                if line.startswith("TOKEN="):
+                    BOT_TOKEN = line.strip().split("=", 1)[1]
+    except Exception as e:
+        print(f"Error reading server.txt: {e}")
+
+# ৩. ফাইল বা এনভায়রনমেন্টে না পেলে সরাসরি আপনার নতুন টোকেনটি ব্যবহার করবে
 if not BOT_TOKEN:
-    raise RuntimeError("BOT_TOKEN environment variable is missing.")
+    BOT_TOKEN = "8802385584:AAFEdek5FYAMnotYFTgrHiAUbCJdLSgBCnQ"
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -50,7 +62,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "• 💡 Tips & Tricks\n"
         "• 🌐 Online & Digital তথ্য\n"
         "• 🎬 নতুন ভিডিও ও Updates\n\n"
-        "নিচের Menu থেকে আপনার প্রয়োজনীয় অপশন নির্বাচন করুন।"
+        "নিচের Menu থেকে আপনার প্রয়োজনীয় অপশন নির্বাচন করুন।"
     )
 
     keyboard = [
@@ -125,7 +137,7 @@ async def about(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "👤 <b>About Subir Biswas</b>\n\n"
         "আমি <b>Subir Biswas</b>।\n"
         "Technology, AI, Digital Skills, Content Creation "
-        "এবং Online Tools নিয়ে শেখা ও কাজ করার চেষ্টা করি।\n\n"
+        "এবং Online Tools নিয়ে শেখা ও কাজ করার চেষ্টা করি।\n\n"
         "🎓 শিক্ষার্থী\n"
         "🤖 AI & Technology enthusiast\n"
         "🎬 Content Creator\n"
