@@ -26,8 +26,8 @@ if not BOT_TOKEN and os.path.exists("server.txt"):
 if not BOT_TOKEN:
     BOT_TOKEN = "8802385584:AAFEdek5FYAMnotYFTgrHiAUbCJdLSgBCnQ"
 
-# ২. অ্যাডমিন Telegram User ID
-ADMIN_ID = 8329773836  
+# ২. অ্যাডমিন Telegram User ID (আপনার নতুন আইডি আপডেট করা হয়েছে)
+ADMIN_ID = 8643401658  
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -128,6 +128,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "▫️ 📱 Useful Apps & Software Tools\n"
         "▫️ 💡 Tech Tips & Tricks\n"
         "▫️ 🎬 Exclusive Content & Updates\n\n"
+        "💬 <b>সরাসরি চ্যাট করতে চান?</b>\n"
+        "এখানে যেকোনো প্রশ্ন বা মেসেজ টাইপ করে পাঠিয়ে দিন, আমরা সরাসরি উত্তর দেবো!\n\n"
         "👉 নেভিগেট করতে নিচের রেসপন্সিভ বাটনগুলো ব্যবহার করুন।"
     )
 
@@ -193,6 +195,64 @@ async def contact_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             print(f"Failed to send phone to admin: {e}")
 
     await update.message.reply_text("✅ ধন্যবাদ! আপনার ফোন নম্বরটি সফলভাবে গ্রহণ করা হয়েছে।")
+
+
+# --- লাইভ চ্যাট ফিচার (ইউজার ও অ্যাডমিন যোগাযোগ) ---
+async def handle_user_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
+    user_id = user.id
+
+    # যদি অ্যাডমিন অন্য কারো মেসেজের উত্তর দেন
+    if user_id == ADMIN_ID:
+        if update.message.reply_to_message:
+            original_msg = update.message.reply_to_message.text or update.message.reply_to_message.caption or ""
+            # অরিজিনাল মেসেজ থেকে ইউজারের ID খুঁজে বের করা
+            if "🆔 ID:" in original_msg or "User ID:" in original_msg:
+                try:
+                    target_id = None
+                    for line in original_msg.split("\n"):
+                        if "ID:" in line:
+                            target_id = int(line.split(":")[-1].replace("<code>", "").replace("</code>", "").strip())
+                            break
+                    if target_id:
+                        await context.bot.copy_message(
+                            chat_id=target_id,
+                            from_chat_id=update.effective_chat.id,
+                            message_id=update.message.message_id
+                        )
+                        await update.message.reply_text("✅ আপনার উত্তরটি সফলভাবে ইউজারের কাছে পাঠানো হয়েছে।")
+                        return
+                except Exception as e:
+                    await update.message.reply_text(f"❌ রিপ্লাই পাঠাতে সমস্যা হয়েছে: {e}")
+                    return
+        return
+
+    # ইউজার মেসেজ পাঠালে তা সরাসরি অ্যাডমিনের কাছে রিলে করা
+    username = f"@{user.username}" if user.username else "নাই"
+    header = (
+        f"📩 <b>নতুন লাইভ চ্যাট মেসেজ!</b>\n"
+        f"👤 <b>নাম:</b> {user.first_name}\n"
+        f"🏷️ <b>Username:</b> {username}\n"
+        f"🆔 <b>ID:</b> <code>{user_id}</code>\n"
+        f"-----------------------------------\n\n"
+    )
+
+    if ADMIN_ID:
+        try:
+            # মেসেজটি অ্যাডমিনের ইনবক্সে ফরওয়ার্ড / কপি করা
+            await context.bot.send_message(
+                chat_id=ADMIN_ID,
+                text=header,
+                parse_mode="HTML"
+            )
+            await context.bot.copy_message(
+                chat_id=ADMIN_ID,
+                from_chat_id=update.effective_chat.id,
+                message_id=update.message.message_id
+            )
+            await update.message.reply_text("✅ আপনার মেসেজটি অ্যাডমিনের কাছে পাঠানো হয়েছে। খুব শীঘ্রই উত্তর দেওয়া হবে।")
+        except Exception as e:
+            print(f"Failed to forward message to admin: {e}")
 
 
 async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -450,9 +510,12 @@ def main():
 
     # Handlers
     application.add_handler(MessageHandler(filters.CONTACT, contact_handler))
+    # লাইভ চ্যাট হ্যান্ডলার (যেকোনো সাধারণ টেক্সট/মেসেজের জন্য)
+    application.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_user_messages))
+    
     application.add_handler(CallbackQueryHandler(button_handler))
 
-    print("SUBIR BISWAS BD Telegram Bot is running with Advanced User Tracking...")
+    print("SUBIR BISWAS BD Telegram Bot is running with Live Chat and Analytics...")
 
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
